@@ -12,6 +12,7 @@ from jax import NamedSharding
 from jax.sharding import PartitionSpec as P
 from tqdm import tqdm
 
+from shared.compat import make_optimizer, optimizer_update
 from shared.logger import NullLogger
 
 f32 = jnp.float32
@@ -149,7 +150,7 @@ def train_step(graphdef, state, batch, clip_coef, ent_coef, vf_coef):
         ent_coef=ent_coef,
         vf_coef=vf_coef,
     )
-    optimizer.update(agent, grads)
+    optimizer_update(optimizer, agent, grads)
     return loss, nnx.state((agent, optimizer)), aux
 
 
@@ -305,12 +306,10 @@ def get_optimizer(config, agent):
     The previous signature was ``get_optimizer(config)`` and referenced an
     undefined global ``agent``, so every call raised ``NameError``.
     """
-    return nnx.Optimizer(
+    return make_optimizer(
         agent,
         optax.chain(
             optax.clip_by_global_norm(config.training_config.max_grad_norm),
             optax.adam(learning_rate=config.training_config.learning_rate, eps=1e-5),
         ),
-        # Flax >= 0.11 requires an explicit filter of what to optimise.
-        wrt=nnx.Param,
     )

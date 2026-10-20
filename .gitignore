@@ -38,3 +38,6 @@ runs/
 .env.*
 *.key
 *.pem
+.scratch
+.pixi/
+.pixi-cache/

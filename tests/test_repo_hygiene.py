@@ -82,8 +82,16 @@ def test_readme_is_present_and_substantive():
 
 
 def test_packaging_files_exist():
-    for name in ('pyproject.toml', 'requirements.txt', 'requirements-dev.txt', 'requirements-gpu.txt'):
+    # pixi is the single source of truth for environments; pyproject carries metadata.
+    for name in ('pyproject.toml', 'pixi.toml', 'pixi.lock'):
         assert (ROOT / name).is_file(), name
+
+
+def test_pip_requirements_are_not_duplicated():
+    """Environments live in pixi.toml; a parallel pip setup would drift."""
+    stale = [p.name for p in ROOT.glob('requirements*.txt')]
+
+    assert not stale, f'duplicated pip requirements: {stale}'
 
 
 def test_ci_workflow_exists_and_runs_tests():
@@ -91,8 +99,9 @@ def test_ci_workflow_exists_and_runs_tests():
 
     assert workflow.is_file()
     content = read(workflow)
-    assert 'pytest' in content
-    assert 'ruff' in content
+    assert 'setup-pixi' in content
+    assert 'pixi run test' in content
+    assert 'pixi run lint' in content
 
 
 @pytest.mark.parametrize('pattern', ['.venv', 'wandb', 'logs', '__pycache__', '.pytest_cache'])

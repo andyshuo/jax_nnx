@@ -1,0 +1,64 @@
+[workspace]
+name = "jax-nnx"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+# --------------------------------------------------------------------------- #
+# base feature: everything except the JAX wheel flavour.
+#
+# Pinned to JAX 0.6.x / Flax 0.10.x because ProcGen (via `procgen-mirror`, the
+# maintained PyPI mirror) requires `numpy < 2`, while JAX >= 0.7 requires
+# `numpy >= 2.2`. JAX 0.6.2 is the newest release that accepts numpy 1.26.
+# --------------------------------------------------------------------------- #
+[feature.base.dependencies]
+python = "3.12.*"
+pytest = "*"
+ruff = "==0.17.1"
+
+[feature.base.pypi-dependencies]
+numpy = ">=1.26,<2"
+flax = ">=0.10.7,<0.11"
+optax = ">=0.2,<0.3"
+distrax = ">=0.1.5"
+einops = ">=0.8"
+chex = ">=0.1.86"
+pillow = ">=10"
+tqdm = ">=4.66"
+orbax-checkpoint = ">=0.6"
+wandb = ">=0.17"
+procgen-mirror = ">=0.10.7"
+gym = "==0.26.2"
+
+[feature.cpu.pypi-dependencies]
+jax = "==0.6.2"
+
+[feature.gpu.pypi-dependencies]
+jax = { version = "==0.6.2", extras = ["cuda12"] }
+
+[feature.base.tasks]
+test = { cmd = "python -m pytest -q", description = "Run the test suite" }
+test-fast = { cmd = "python -m pytest -q -m 'not slow'", description = "Skip end-to-end update steps" }
+lint = { cmd = "ruff check . && ruff format --check .", description = "Lint and formatting check" }
+fmt = { cmd = "ruff format .", description = "Format the code" }
+check = { cmd = "pixi run lint && pixi run test", description = "Lint plus the full test suite" }
+
+[feature.base.tasks.dry-run]
+cmd = "python main.py --config vae --dry-run --logdir runs"
+description = "Build the default variant without touching the environment"
+
+[feature.base.tasks.train]
+cmd = "python main.py --config vae --logdir runs"
+description = "Train the default variant"
+
+# One task per variant so `pixi run train-nature` etc. just work.
+[feature.base.tasks.train-cleanrl]
+cmd = "python main.py --config cleanrl --logdir runs"
+description = "Train the ResNet (cleanrl) variant"
+
+[feature.base.tasks.train-vae]
+cmd = "python main.py --config vae --logdir runs"
+description = "Train the discrete-VAE variant"
+
+[environments]
+default = { features = ["base", "cpu"], solve-group = "default" }
+gpu = { features = ["base", "gpu"], solve-group = "gpu" }

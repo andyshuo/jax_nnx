@@ -17,34 +17,29 @@ the auxiliary reconstruction loss.
 
 ## Installation
 
-[`uv`](https://docs.astral.sh/uv/) is the fastest way to get set up:
+Environments are managed with [pixi](https://pixi.sh):
 
 ```bash
-uv venv --python 3.12
-source .venv/bin/activate
-
-# GPU build of JAX first, otherwise pip may resolve the CPU-only wheel.
-uv pip install -r requirements-gpu.txt   # CUDA 12; plain "jax" for CPU-only
-uv pip install -r requirements.txt
-
-# ProcGen is only needed for actual training (it builds from source).
-uv pip install -r requirements-env.txt
+pixi install          # CPU JAX: test-suite and CI
+pixi install -e gpu   # CUDA 12 JAX: real training
 ```
 
-`requirements-env.txt` is intentionally separate: building ProcGen needs a C++
-toolchain and is not needed by the test-suite, which stubs the environment out.
+The environment pins Python 3.12, JAX 0.6.x, Flax 0.10.x and NumPy 1.x. That is not
+gratuitous: ProcGen (through the maintained `procgen-mirror` PyPI mirror) requires
+`numpy < 2`, while JAX >= 0.7 requires `numpy >= 2.2`. `shared/compat.py` bridges the
+Flax `Optimizer.update` signature change, so the code also runs on newer Flax.
 
 ## Training
 
 ```bash
 # VAE encoder, logged to Weights & Biases
-python main.py --config vae
+pixi run python main.py --config vae
 
 # ResNet baseline, fully offline, checkpoints under runs/
-python main.py --config cleanrl --no-wandb --logdir runs
+pixi run python main.py --config cleanrl --no-wandb --logdir runs
 
 # Build the model and exit (no environment, no GPU required)
-python main.py --config vae --dry-run
+pixi run python main.py --config vae --dry-run
 ```
 
 Useful flags:
@@ -98,14 +93,13 @@ tests/                  pytest suite (model, losses, GAE, CLI, env wrappers)
 ## Tests
 
 ```bash
-uv pip install -r requirements-dev.txt
-pytest -q                 # model, losses, GAE, CLI, env wrappers, smoke tests
-pytest -q -m "not slow"   # skip the end-to-end update steps
-ruff check . && ruff format --check .
+pixi run test        # full suite
+pixi run test-fast   # skip the end-to-end update steps
+pixi run lint        # ruff check + format check
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint plus the full suite on Python 3.11-3.13 on
-CPU, then dry-runs both variants to make sure the entry point still builds.
+CI (`.github/workflows/ci.yml`) provisions the pixi environment, runs lint plus the
+full suite on CPU, then dry-runs both variants to make sure the entry point builds.
 
 ## License
 

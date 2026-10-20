@@ -1,6 +1,0 @@
-# GPU build of JAX (CUDA 12 wheels). Install this BEFORE requirements.txt so pip
-# does not resolve the CPU-only wheel first:
-#
-#   uv pip install -r requirements-gpu.txt
-#   uv pip install -r requirements.txt
-jax[cuda12]>=0.4.35
