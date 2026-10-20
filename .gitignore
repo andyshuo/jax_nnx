@@ -1,0 +1,40 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# --- Virtual environments / package managers ---
+.venv/
+venv/
+env/
+.uvcache/
+.uvpython/
+uv.lock
+
+# --- Tooling caches ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+# --- Experiment artifacts ---
+logs/
+wandb/
+videos/
+checkpoints/
+runs/
+*.ckpt
+*.orbax
+*.png
+!docs/**/*.png
+
+# --- Local data / secrets ---
+.env
+.env.*
+*.key
+*.pem

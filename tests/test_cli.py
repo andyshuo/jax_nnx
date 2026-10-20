@@ -1,0 +1,155 @@
+"""CLI parsing, config building and the device-mesh helpers in ``main``."""
+
+import jax
+import numpy as np
+import pytest
+
+import main
+
+
+# --------------------------------------------------------------------------- #
+# argument parsing
+# --------------------------------------------------------------------------- #
+def test_default_config_is_vae():
+    args = main.parse_args([])
+
+    assert args.config == main.DEFAULT_CONFIG == 'vae'
+
+
+@pytest.mark.parametrize('kind', main.CONFIG_CHOICES)
+def test_config_choice_is_accepted(kind):
+    assert main.parse_args(['--config', kind]).config == kind
+
+
+def test_removed_jepa_choice_is_rejected():
+    assert 'jepa' not in main.CONFIG_CHOICES
+    with pytest.raises(SystemExit):
+        main.parse_args(['--config', 'jepa'])
+
+
+def test_unknown_config_is_rejected():
+    with pytest.raises(SystemExit):
+        main.parse_args(['--config', 'nope'])
+
+
+def test_logdir_defaults_to_a_relative_path():
+    args = main.parse_args([])
+
+    assert args.logdir == main.DEFAULT_LOG_DIR == 'logs'
+    assert 'andyshuo' not in args.logdir
+    assert not args.logdir.startswith('/home')
+
+
+def test_no_wandb_and_dry_run_flags():
+    args = main.parse_args(['--no-wandb', '--dry-run'])
+
+    assert args.no_wandb is True
+    assert args.dry_run is True
+
+
+def test_capture_video_flag():
+    assert main.parse_args(['--capture-video']).capture_video is True
+
+
+def test_seed_is_configurable():
+    assert main.parse_args(['--seed', '123']).seed == 123
+
+
+# --------------------------------------------------------------------------- #
+# config building
+# --------------------------------------------------------------------------- #
+def test_build_config_unknown_variant_raises():
+    with pytest.raises(ModuleNotFoundError):
+        main.build_config('jepa')
+
+
+@pytest.mark.parametrize('kind', main.CONFIG_CHOICES)
+def test_build_config_fills_training_sizes(kind):
+    config, _ = main.build_config(kind)
+
+    assert config.training_config.batch_size > 0
+    assert config.training_config.minibatch_size > 0
+    assert config.training_config.num_iterations > 0
+
+
+# --------------------------------------------------------------------------- #
+# filesystem / seeding / devices
+# --------------------------------------------------------------------------- #
+def test_make_logdir_creates_a_timestamped_directory(tmp_path):
+    path = main.make_logdir(tmp_path, 'run')
+
+    assert path.exists()
+    assert path.is_dir()
+    assert path.name.startswith('run_')
+    assert path.parent == tmp_path
+
+
+def test_seed_everything_is_reproducible():
+    first_rng, _ = main.seed_everything(123)
+    second_rng, _ = main.seed_everything(123)
+
+    assert np.array_equal(np.asarray(first_rng), np.asarray(second_rng))
+
+
+def test_seed_everything_differs_across_seeds():
+    first_rng, _ = main.seed_everything(1)
+    second_rng, _ = main.seed_everything(2)
+
+    assert not np.array_equal(np.asarray(first_rng), np.asarray(second_rng))
+
+
+def test_make_mesh_covers_every_device():
+    mesh, sharding = main.make_mesh()
+
+    assert mesh.size == jax.device_count()
+    assert 'batch' in mesh.axis_names
+    assert sharding.spec is not None
+
+
+@pytest.mark.parametrize('kind', main.CONFIG_CHOICES)
+def test_count_params_is_positive(kind):
+    from flax import nnx
+
+    config, _ = main.build_config(kind)
+    config = _shrink(config)
+    _, rngs = main.seed_everything(0)
+    agent_module = __import__(f'ppo_{kind}.agent', fromlist=['PPOAgent'])
+    agent = agent_module.PPOAgent(config.agent_config, rngs)
+
+    assert main.count_params(agent) > 0
+    assert isinstance(nnx.state(agent), object)
+
+
+# --------------------------------------------------------------------------- #
+# end-to-end dry runs (no env, no wandb, no GPU requirement)
+# --------------------------------------------------------------------------- #
+@pytest.mark.slow
+@pytest.mark.parametrize('kind', main.CONFIG_CHOICES)
+def test_dry_run_builds_every_variant(kind, tmp_path, capsys):
+    exit_code = main.main(['--config', kind, '--dry-run', '--logdir', str(tmp_path), '--no-wandb'])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert 'dry-run' in captured.out
+    assert any(tmp_path.iterdir())
+
+
+def _shrink(config):
+    """Shrink a default config so the dry-run tests stay fast on CPU."""
+    if hasattr(config.agent_config, 'vae_config'):
+        vae = config.agent_config.vae_config
+        vae.shape = (16, 16, 3)
+        vae.enc_out_features = [4, 8]
+        vae.dec_out_features = [8, 3]
+        vae.num_categories = 4
+        vae.categorical_dim = 8
+    else:
+        resnet = config.agent_config.resnet_config
+        resnet.obs_shape = (16, 16, 3)
+        resnet.hidden_dims = [4, 8]
+
+    config.agent_config.proj_config.out_features = 16
+    config.agent_config.actor_config.in_features = 16
+    config.agent_config.actor_config.out_features = 6
+    config.agent_config.critic_config.in_features = 16
+    return config

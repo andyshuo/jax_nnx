@@ -1,0 +1,5 @@
+# ProcGen is only needed to actually run training; the test-suite stubs it out.
+# Building ProcGen requires a C++ toolchain and is not installable on every platform,
+# so it is kept out of requirements.txt to keep CI fast and portable.
+gym==0.26.2
+procgen>=0.10.7
