@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Local CI gate.
+#
+# GitHub-hosted Actions are currently unavailable for this account (billing), so
+# the same checks that .github/workflows/ci.yml runs are executed before every
+# push instead of after it.
+#
+# Enable with:  git config core.hooksPath .githooks
+set -euo pipefail
+
+if ! command -v pixi >/dev/null 2>&1; then
+  echo "pre-push: pixi not found, skipping local CI" >&2
+  exit 0
+fi
+
+echo "pre-push: running 'pixi run ci' (lint + tests + entrypoint smoke)..." >&2
+pixi run ci

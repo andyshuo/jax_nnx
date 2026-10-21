@@ -101,6 +101,14 @@ pixi run lint        # ruff check + format check
 CI (`.github/workflows/ci.yml`) provisions the pixi environment, runs lint plus the
 full suite on CPU, then dry-runs both variants to make sure the entry point builds.
 
+GitHub-hosted Actions are currently unavailable on this account (billing), so the same
+gate also runs locally, before the push instead of after it:
+
+```bash
+git config core.hooksPath .githooks   # one-time
+pixi run ci                           # lint + full suite + entrypoint smoke
+```
+
 ## License
 
 No license has been chosen for this repository yet, so no rights to use, modify or

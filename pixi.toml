@@ -41,6 +41,7 @@ test-fast = { cmd = "python -m pytest -q -m 'not slow'", description = "Skip end
 lint = { cmd = "ruff check . && ruff format --check .", description = "Lint and formatting check" }
 fmt = { cmd = "ruff format .", description = "Format the code" }
 check = { cmd = "pixi run lint && pixi run test", description = "Lint plus the full test suite" }
+ci = { cmd = "pixi run lint && pixi run test && pixi run dry-run", description = "The same gate CI runs: lint, full suite, entrypoint smoke" }
 
 [feature.base.tasks.dry-run]
 cmd = "python main.py --config vae --dry-run --logdir runs"
