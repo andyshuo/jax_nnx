@@ -21,12 +21,12 @@ dependencies = [
     "orbax-checkpoint>=0.6",
     "wandb>=0.17",
     "procgen-mirror>=0.10.7",
-    "gym==0.26.2",
+    "gym==0.25.2",
 ]
 
 [project.optional-dependencies]
 envs = [
-    "gym==0.26.2",
+    "gym==0.25.2",
     "procgen>=0.10.7",
 ]
 dev = [

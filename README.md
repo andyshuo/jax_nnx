@@ -9,6 +9,9 @@ environment wrappers and PPO objective:
 | --------- | --------------------------------- | ------------------------------- | ------------------ |
 | `cleanrl` | IMPALA-style ResNet               | none (plain PPO)                | `--config cleanrl` |
 | `vae`     | discrete VAE over the observation | reconstruction + categorical KL | `--config vae`     |
+| `nature`  | DQN "Nature" CNN                  | none (plain PPO)                | `--config nature`  |
+| `impala`  | deep IMPALA CNN (2 res blocks/stage) | none (plain PPO)             | `--config impala`  |
+| `jepa`    | ResNet + latent predictor         | JEPA-style latent prediction    | `--config jepa`    |
 
 The `vae` variant encodes each frame into `num_categories × categorical_dim` discrete
 latents with a straight-through estimator, then feeds the flattened latent codes to a
@@ -87,7 +90,9 @@ ppo_cleanrl/            ResNet encoder variant
   agent.py  config.py  episode.py  modules.py  utils.py
 ppo_vae/                discrete-VAE encoder variant
   agent.py  config.py  episode.py  modules.py  utils.py
-tests/                  pytest suite (model, losses, GAE, CLI, env wrappers)
+  agent.py  config.py  episode.py  modules.py  utils.py   (same five files per variant)
+shared/                 ppo.py (losses/GAE), episode.py, make_envs.py, logger, compat
+tests/                  pytest suite (models, losses, GAE, CLI, env wrappers, variants)
 ```
 
 ## Tests

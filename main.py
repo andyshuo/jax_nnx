@@ -58,7 +58,7 @@ from shared.make_envs import make_procgen
 
 jax.config.update('jax_threefry_partitionable', True)
 
-CONFIG_CHOICES = ('cleanrl', 'vae')
+CONFIG_CHOICES = ('cleanrl', 'vae', 'nature', 'impala', 'jepa')
 DEFAULT_CONFIG = 'vae'
 DEFAULT_LOG_DIR = 'logs'
 

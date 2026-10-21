@@ -27,7 +27,7 @@ tqdm = ">=4.66"
 orbax-checkpoint = ">=0.6"
 wandb = ">=0.17"
 procgen-mirror = ">=0.10.7"
-gym = "==0.26.2"
+gym = "==0.25.2"
 
 [feature.cpu.pypi-dependencies]
 jax = "==0.6.2"
@@ -59,6 +59,22 @@ description = "Train the ResNet (cleanrl) variant"
 [feature.base.tasks.train-vae]
 cmd = "python main.py --config vae --logdir runs"
 description = "Train the discrete-VAE variant"
+
+[feature.base.tasks.train-nature]
+cmd = "python main.py --config nature --logdir runs"
+description = "Train the Nature-CNN variant"
+
+[feature.base.tasks.train-impala]
+cmd = "python main.py --config impala --logdir runs"
+description = "Train the deep IMPALA-CNN variant"
+
+[feature.base.tasks.train-jepa]
+cmd = "python main.py --config jepa --logdir runs"
+description = "Train the JEPA-auxiliary variant"
+
+[feature.base.tasks.benchmark]
+cmd = "python scripts/benchmark.py"
+description = "Short comparison across every variant"
 
 [environments]
 default = { features = ["base", "cpu"], solve-group = "default" }

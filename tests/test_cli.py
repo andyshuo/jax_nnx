@@ -21,10 +21,9 @@ def test_config_choice_is_accepted(kind):
     assert main.parse_args(['--config', kind]).config == kind
 
 
-def test_removed_jepa_choice_is_rejected():
-    assert 'jepa' not in main.CONFIG_CHOICES
+def test_unknown_choice_is_rejected():
     with pytest.raises(SystemExit):
-        main.parse_args(['--config', 'jepa'])
+        main.parse_args(['--config', 'not-a-variant'])
 
 
 def test_unknown_config_is_rejected():
@@ -60,7 +59,7 @@ def test_seed_is_configurable():
 # --------------------------------------------------------------------------- #
 def test_build_config_unknown_variant_raises():
     with pytest.raises(ModuleNotFoundError):
-        main.build_config('jepa')
+        main.build_config('not-a-variant')
 
 
 @pytest.mark.parametrize('kind', main.CONFIG_CHOICES)
@@ -143,6 +142,14 @@ def _shrink(config):
         vae.dec_out_features = [8, 3]
         vae.num_categories = 4
         vae.categorical_dim = 8
+    elif hasattr(config.agent_config, 'nature_config'):
+        nature = config.agent_config.nature_config
+        nature.obs_shape = (16, 16, 3)
+        nature.hidden_dims = [8, 16, 16]
+    elif hasattr(config.agent_config, 'impala_config'):
+        impala = config.agent_config.impala_config
+        impala.obs_shape = (16, 16, 3)
+        impala.hidden_dims = [8, 16]
     else:
         resnet = config.agent_config.resnet_config
         resnet.obs_shape = (16, 16, 3)

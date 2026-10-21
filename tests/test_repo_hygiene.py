@@ -13,8 +13,14 @@ def read(path: Path) -> str:
     return path.read_text(encoding='utf-8', errors='ignore')
 
 
-def test_duplicate_variant_package_is_gone():
-    assert not (ROOT / 'ppo_jepa').exists()
+def test_every_variant_package_is_complete():
+    """Each CLI variant must ship the five modules ``main`` imports."""
+    import main
+
+    for kind in main.CONFIG_CHOICES:
+        package = ROOT / f'ppo_{kind}'
+        for module in ('agent.py', 'config.py', 'episode.py', 'modules.py', 'utils.py'):
+            assert (package / module).is_file(), f'{package.name}/{module}'
 
 
 def test_variants_match_the_cli_choices():

@@ -66,7 +66,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/24/7bdeab738393d80adbadc5df8d04737e5c0e1b86dab38200d1173dabf456/glcontext-3.1.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/74/1b/cc758368f1b2466b3701c0f692973aa8a0b51a192a40463c1d02d54d640c/glfw-1.12.0-py2.py27.py3.py30.py31.py32.py33.py34.py35.py36.py37.py38-none-manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/65/b9/6b29500a1c581ff4d77fd83c6568d068bee06f1b139fb6eb0a4f2d4bce8a/googleapis_common_protos-1.75.5-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ab/b1/eb05a423eb801ab7d0715d6a3b28d92589e30b437052553df19ca2087240/gym-0.26.2.tar.gz
+      - pypi: https://files.pythonhosted.org/packages/1c/5c/e5c14f3474e91038a51ec794350c7af9635a2faf3873c85989bf9dd127ce/gym-0.25.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/89/8c/83da801207f50acfd262041e7974f3b42a0e5edd410149d8a70fd4ad2e70/gym3-0.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/41/55/55d157aa8693090954fc9639bf27218240517c3bc7afa6e97412da6ebfd9/gym_notices-0.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
@@ -190,7 +190,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/81/24/7bdeab738393d80adbadc5df8d04737e5c0e1b86dab38200d1173dabf456/glcontext-3.1.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/74/1b/cc758368f1b2466b3701c0f692973aa8a0b51a192a40463c1d02d54d640c/glfw-1.12.0-py2.py27.py3.py30.py31.py32.py33.py34.py35.py36.py37.py38-none-manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/65/b9/6b29500a1c581ff4d77fd83c6568d068bee06f1b139fb6eb0a4f2d4bce8a/googleapis_common_protos-1.75.5-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ab/b1/eb05a423eb801ab7d0715d6a3b28d92589e30b437052553df19ca2087240/gym-0.26.2.tar.gz
+      - pypi: https://files.pythonhosted.org/packages/1c/5c/e5c14f3474e91038a51ec794350c7af9635a2faf3873c85989bf9dd127ce/gym-0.25.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/89/8c/83da801207f50acfd262041e7974f3b42a0e5edd410149d8a70fd4ad2e70/gym3-0.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/41/55/55d157aa8693090954fc9639bf27218240517c3bc7afa6e97412da6ebfd9/gym_notices-0.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
@@ -716,53 +716,50 @@ packages:
   - protobuf>=6.33.5,<8.0.0
   - grpcio>=1.59.0,<2.0.0 ; extra == 'grpc'
   requires_python: '>=3.10'
-- pypi: https://files.pythonhosted.org/packages/ab/b1/eb05a423eb801ab7d0715d6a3b28d92589e30b437052553df19ca2087240/gym-0.26.2.tar.gz
+- pypi: https://files.pythonhosted.org/packages/1c/5c/e5c14f3474e91038a51ec794350c7af9635a2faf3873c85989bf9dd127ce/gym-0.25.2.tar.gz
   name: gym
-  version: 0.26.2
-  sha256: e0d882f4b54f0c65f203104c24ab8a38b039f1289986803c7d02cdbe214fbcc4
+  version: 0.25.2
+  sha256: c8323f4c6f37363710b519742a0094316deddc9d8fc9e3f6deac08d6da47150c
   requires_dist:
   - numpy>=1.18.0
   - cloudpickle>=1.2.0
   - importlib-metadata>=4.8.0 ; python_full_version < '3.10'
   - gym-notices>=0.0.4
   - dataclasses==0.8 ; python_full_version == '3.6.*'
-  - ale-py~=0.8.0 ; extra == 'atari'
+  - ale-py~=0.7.5 ; extra == 'atari'
   - autorom[accept-rom-license]~=0.4.2 ; extra == 'accept-rom-license'
   - box2d-py==2.3.5 ; extra == 'box2d'
   - pygame==2.1.0 ; extra == 'box2d'
   - swig==4.* ; extra == 'box2d'
   - pygame==2.1.0 ; extra == 'classic-control'
   - mujoco-py>=2.1,<2.2 ; extra == 'mujoco-py'
-  - mujoco==2.2 ; extra == 'mujoco'
+  - mujoco==2.2.0 ; extra == 'mujoco'
   - imageio>=2.14.1 ; extra == 'mujoco'
   - pygame==2.1.0 ; extra == 'toy-text'
   - lz4>=3.1.0 ; extra == 'other'
   - opencv-python>=3.0 ; extra == 'other'
   - matplotlib>=3.0 ; extra == 'other'
-  - moviepy>=1.0.0 ; extra == 'other'
-  - mujoco-py>=2.1,<2.2 ; extra == 'testing'
   - opencv-python>=3.0 ; extra == 'testing'
-  - swig==4.* ; extra == 'testing'
+  - mujoco==2.2.0 ; extra == 'testing'
   - matplotlib>=3.0 ; extra == 'testing'
-  - box2d-py==2.3.5 ; extra == 'testing'
-  - imageio>=2.14.1 ; extra == 'testing'
-  - lz4>=3.1.0 ; extra == 'testing'
-  - mujoco==2.2 ; extra == 'testing'
-  - moviepy>=1.0.0 ; extra == 'testing'
+  - mujoco-py>=2.1,<2.2 ; extra == 'testing'
   - pygame==2.1.0 ; extra == 'testing'
+  - swig==4.* ; extra == 'testing'
+  - box2d-py==2.3.5 ; extra == 'testing'
+  - lz4>=3.1.0 ; extra == 'testing'
+  - imageio>=2.14.1 ; extra == 'testing'
   - pytest==7.0.1 ; extra == 'testing'
-  - pytest==7.0.1 ; extra == 'all'
-  - mujoco-py>=2.1,<2.2 ; extra == 'all'
-  - lz4>=3.1.0 ; extra == 'all'
-  - ale-py~=0.8.0 ; extra == 'all'
-  - swig==4.* ; extra == 'all'
-  - matplotlib>=3.0 ; extra == 'all'
-  - box2d-py==2.3.5 ; extra == 'all'
-  - imageio>=2.14.1 ; extra == 'all'
   - opencv-python>=3.0 ; extra == 'all'
-  - mujoco==2.2 ; extra == 'all'
-  - moviepy>=1.0.0 ; extra == 'all'
+  - mujoco==2.2.0 ; extra == 'all'
+  - matplotlib>=3.0 ; extra == 'all'
+  - ale-py~=0.7.5 ; extra == 'all'
+  - mujoco-py>=2.1,<2.2 ; extra == 'all'
   - pygame==2.1.0 ; extra == 'all'
+  - swig==4.* ; extra == 'all'
+  - box2d-py==2.3.5 ; extra == 'all'
+  - lz4>=3.1.0 ; extra == 'all'
+  - pytest==7.0.1 ; extra == 'all'
+  - imageio>=2.14.1 ; extra == 'all'
   requires_python: '>=3.6'
 - pypi: https://files.pythonhosted.org/packages/41/55/55d157aa8693090954fc9639bf27218240517c3bc7afa6e97412da6ebfd9/gym_notices-0.1.0-py3-none-any.whl
   name: gym-notices
