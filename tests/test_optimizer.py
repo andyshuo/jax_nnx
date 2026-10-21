@@ -76,3 +76,22 @@ def test_optimizer_state_is_created_for_all_params(kind, config_fixture, request
 
     opt_state = nnx.state(optimizer)
     assert len(jax.tree.leaves(opt_state)) > 0
+
+
+@pytest.mark.parametrize(
+    'kind, config_fixture',
+    [
+        ('cleanrl', 'cleanrl_config'),
+        ('vae', 'vae_config'),
+    ],
+)
+def test_anneal_lr_builds_an_optimizer(kind, config_fixture, request, rngs):
+    config = request.getfixturevalue(config_fixture)
+    config.training_config.anneal_lr = True
+    agent, utils = build(kind, config, rngs)
+
+    optimizer = utils.get_optimizer(config, agent)
+
+    assert isinstance(optimizer, nnx.Optimizer)
+    # A schedule makes optax track the step counter, so the state is non-trivial.
+    assert len(jax.tree.leaves(nnx.state(optimizer))) > 0

@@ -1,5 +1,6 @@
 """Training utilities for the VAE-encoder PPO variant."""
 
+from functools import partial
 from typing import Any
 
 import distrax
@@ -45,15 +46,18 @@ def compute_ratio(newlogprob, logprob):
     return jnp.exp(logratio), logratio
 
 
-def compute_policy_loss(advantage, advantages_mean, advantages_std, ratio, clip_coef):
-    advantage = (advantage - advantages_mean) / (advantages_std + 1e-8)
+def compute_policy_loss(advantage, advantages_mean, advantages_std, ratio, clip_coef, norm_adv=True):
+    if norm_adv:
+        advantage = (advantage - advantages_mean) / (advantages_std + 1e-8)
     pg_loss1 = -advantage * ratio
     pg_loss2 = -advantage * jnp.clip(ratio, 1 - clip_coef, 1 + clip_coef)
     return jnp.maximum(pg_loss1, pg_loss2)
 
 
-def compute_value_loss(newvalue, return_, value, clip_coef):
+def compute_value_loss(newvalue, return_, value, clip_coef, clip_vloss=True):
     v_loss_unclipped = (newvalue - return_) ** 2
+    if not clip_vloss:
+        return 0.5 * v_loss_unclipped
     v_clipped = value + jnp.clip(newvalue - value, -clip_coef, clip_coef)
     v_loss_clipped = (v_clipped - return_) ** 2
     return 0.5 * jnp.maximum(v_loss_unclipped, v_loss_clipped)
@@ -128,6 +132,8 @@ def loss_fn(
     vf_coef=0.5,
     recon_coef=1.0,
     kl_coef=1.0,
+    norm_adv=True,
+    clip_vloss=True,
 ):
     """PPO + VAE objective, as a pure function of ``agent`` so it can be diffed."""
     mb_obs = batch['mb_obs']
@@ -150,11 +156,12 @@ def loss_fn(
             mb_advantages.std(),
             ratio,
             clip_coef,
+            norm_adv,
         )
     )
 
     newvalue = einops.rearrange(newvalue, 'b 1 -> b')
-    v_loss = jnp.mean(compute_value_loss(newvalue, mb_returns, mb_values, clip_coef))
+    v_loss = jnp.mean(compute_value_loss(newvalue, mb_returns, mb_values, clip_coef, clip_vloss))
     entropy_loss = entropy.mean()
 
     kl_loss = compute_kl_loss(logits)
@@ -165,8 +172,8 @@ def loss_fn(
     return loss, aux
 
 
-@jax.jit
-def train_step(graphdef, state, batch, clip_coef, ent_coef, vf_coef, recon_coef, kl_coef):
+@partial(jax.jit, static_argnames=('norm_adv', 'clip_vloss'))
+def train_step(graphdef, state, batch, clip_coef, ent_coef, vf_coef, recon_coef, kl_coef, norm_adv, clip_vloss):
     agent, optimizer = nnx.merge(graphdef, state)
     (loss, aux), grads = nnx.value_and_grad(loss_fn, has_aux=True)(
         agent,
@@ -176,6 +183,8 @@ def train_step(graphdef, state, batch, clip_coef, ent_coef, vf_coef, recon_coef,
         vf_coef=vf_coef,
         recon_coef=recon_coef,
         kl_coef=kl_coef,
+        norm_adv=norm_adv,
+        clip_vloss=clip_vloss,
     )
     optimizer_update(optimizer, agent, grads)
     return loss, nnx.state((agent, optimizer)), aux
@@ -303,6 +312,8 @@ def train(graphdef, state, data, mesh, config, rng, logger: Any | None = None):
                 tc.vf_coef,
                 config.recon_coef,
                 config.kl_coef,
+                tc.norm_adv,
+                tc.clip_vloss,
             )
             pg_loss, v_loss, entropy_loss, recon_loss, kl_loss, logratio, ratio, recon_x, mb_obs = aux
             for name, value in {
@@ -316,6 +327,10 @@ def train(graphdef, state, data, mesh, config, rng, logger: Any | None = None):
                 assert jnp.isfinite(value), f'Losses/{name} is not finite'
             old_approx_kl, approx_kl, cf = compute_clipfracs(ratio, logratio, tc.clip_coef)
             clipfracs.append(cf)
+            # cleanrl-style early stop: stop minibatching once the policy moved
+            # further than 1.5x the configured KL budget.
+            if tc.target_kl is not None and float(approx_kl) > 1.5 * tc.target_kl:
+                break
 
     if aux is None:
         raise ValueError(
@@ -346,10 +361,20 @@ def train(graphdef, state, data, mesh, config, rng, logger: Any | None = None):
 
 def get_optimizer(config, agent):
     """Adam with global-norm clipping over ``agent``'s parameters."""
+    tc = config.training_config
+    learning_rate = tc.learning_rate
+    if tc.anneal_lr:
+        minibatches = max(1, tc.batch_size // max(1, tc.minibatch_size))
+        learning_rate = optax.linear_schedule(
+            init_value=tc.learning_rate,
+            end_value=0.0,
+            transition_steps=max(1, tc.num_iterations * tc.update_epochs * minibatches),
+        )
+
     return make_optimizer(
         agent,
         optax.chain(
-            optax.clip_by_global_norm(config.training_config.max_grad_norm),
-            optax.adam(learning_rate=config.training_config.learning_rate, eps=1e-5),
+            optax.clip_by_global_norm(tc.max_grad_norm),
+            optax.adam(learning_rate=learning_rate, eps=1e-5),
         ),
     )

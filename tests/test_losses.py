@@ -243,3 +243,24 @@ def test_vae_loss_respects_coefficients(vae_config, rngs):
     scaled, _ = loss_fn(agent, batch, recon_coef=4.0, kl_coef=4.0)
 
     assert not jnp.allclose(base, scaled)
+
+
+@pytest.mark.parametrize('name', MODULES)
+def test_policy_loss_can_skip_advantage_normalisation(name):
+    advantage = jnp.array([2.0, -2.0])
+    ratio = jnp.ones((2,))
+
+    unnormalised = module(name).compute_policy_loss(
+        advantage, advantage.mean(), advantage.std(), ratio, clip_coef=0.2, norm_adv=False
+    )
+
+    assert jnp.allclose(unnormalised, jnp.array([-2.0, 2.0]))
+
+
+@pytest.mark.parametrize('name', MODULES)
+def test_value_loss_can_skip_clipping(name):
+    loss = module(name).compute_value_loss(
+        jnp.array([2.0]), jnp.array([1.0]), jnp.array([0.0]), clip_coef=0.2, clip_vloss=False
+    )
+
+    assert jnp.allclose(loss, 0.5 * (2.0 - 1.0) ** 2)
