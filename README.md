@@ -95,6 +95,19 @@ shared/                 ppo.py (losses/GAE), episode.py, make_envs.py, logger, c
 tests/                  pytest suite (models, losses, GAE, CLI, env wrappers, variants)
 ```
 
+## Benchmarking the variants
+
+```bash
+pixi run benchmark                              # every variant, 200k steps
+pixi run python scripts/benchmark.py --variants cleanrl jepa --timesteps 500000
+```
+
+Each variant is trained in its own process with `--no-wandb` and greedy evaluation
+enabled; the script parses the evaluation lines and writes `results.json` and a
+markdown `results.md` table next to the run directories. Timings depend heavily on
+the host, so the table is generated rather than committed: a full five-variant sweep
+takes tens of minutes on CPU.
+
 ## Tests
 
 ```bash
