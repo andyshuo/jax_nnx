@@ -36,6 +36,7 @@ os.environ.setdefault('NCCL_PROTO', 'SIMPLE,LL,LL128')
 
 import argparse
 import importlib
+import json
 import random
 import time
 from collections.abc import Sequence
@@ -169,21 +170,74 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action='store_true',
         help='Build the model and exit without touching the environment.',
     )
+    parser.add_argument('--total-timesteps', type=int, default=None, help='Override the training budget.')
+    parser.add_argument('--num-envs', type=int, default=None, help='Override the env count.')
+    parser.add_argument('--num-steps', type=int, default=None, help='Override the rollout length.')
+    parser.add_argument('--learning-rate', type=float, default=None, help='Override the learning rate.')
+    parser.add_argument(
+        '--resume',
+        type=str,
+        default=None,
+        metavar='RUN_DIR',
+        help='Resume from the latest checkpoint inside RUN_DIR (a previous run directory).',
+    )
     return parser.parse_args(argv)
 
 
 # --------------------------------------------------------------------------- #
 # Training loop
 # --------------------------------------------------------------------------- #
+
+
+def apply_overrides(config, args: argparse.Namespace) -> None:
+    """Apply CLI hyper-parameter overrides and recompute the derived batch sizes."""
+    tc = config.training_config
+    if args.total_timesteps is not None:
+        tc.total_timesteps = args.total_timesteps
+    if args.num_envs is not None:
+        tc.num_envs = args.num_envs
+    if args.num_steps is not None:
+        tc.num_steps = args.num_steps
+    if args.learning_rate is not None:
+        tc.learning_rate = args.learning_rate
+
+    tc.batch_size = int(tc.num_envs * tc.num_steps)
+    tc.minibatch_size = max(1, tc.batch_size // tc.num_minibatches)
+    tc.num_iterations = int(tc.total_timesteps // tc.batch_size)
+
+
+def write_config(logdir: Path, config, strconfig) -> Path:
+    """Dump the fully resolved config next to the run, for reproducibility."""
+    path = logdir / 'config.json'
+    payload = {'config': asdict(config), 'strconfig': asdict(strconfig)}
+    path.write_text(json.dumps(payload, indent=2, default=str), encoding='utf-8')
+    return path
+
+
+def restore_checkpoint(checkpoint_manager, template):
+    """Restore the latest checkpoint into ``template``; ``None`` when there is none."""
+    step = checkpoint_manager.latest_step()
+    if step is None:
+        return None
+    return checkpoint_manager.restore(step, args=ocp.args.StandardRestore(template))
+
+
 def run(args: argparse.Namespace) -> dict:
     """Run training (or just the model build when ``args.dry_run``) and return a summary."""
     config, strconfig = build_config(args.config)
     config.seed = args.seed
     config.capture_video = args.capture_video
     strconfig.capture_video = args.capture_video
+    apply_overrides(config, args)
 
     rng, rngs = seed_everything(args.seed)
-    logdir = make_logdir(args.logdir, strconfig.wandb_config.name)
+    if args.resume:
+        logdir = Path(args.resume).expanduser()
+        if not logdir.is_dir():
+            raise SystemExit(f'--resume: {logdir} is not a directory')
+    else:
+        logdir = make_logdir(args.logdir, strconfig.wandb_config.name)
+    write_config(logdir, config, strconfig)
     mesh, replicated_sharding = make_mesh()
 
     agent, _, graphdef, state = build_model(args.config, config, rngs, replicated_sharding)
@@ -231,11 +285,24 @@ def run(args: argparse.Namespace) -> dict:
     )
 
     global_step = 0
+    start_iteration = 1
+    if args.resume:
+        restored = restore_checkpoint(
+            checkpoint_manager,
+            {'state': state, 'global_step': global_step, 'rng': rng},
+        )
+        if restored is None:
+            raise SystemExit(f'--resume: no checkpoint in {logdir / "checkpoints"}')
+        state, rng = restored['state'], restored['rng']
+        global_step = int(restored['global_step'])
+        start_iteration = global_step // max(1, config.training_config.batch_size) + 1
+        print(f'resumed from step {global_step:,} (iteration {start_iteration:,})')
+
     start_time = time.time()
     next_obs = np.array(envs.reset())
     next_done = np.zeros(config.training_config.num_envs)
 
-    for iteration in range(1, config.training_config.num_iterations + 1):
+    for iteration in range(start_iteration, config.training_config.num_iterations + 1):
         rollout_start_time = time.time()
         global_step, episode = env_step(
             global_step,

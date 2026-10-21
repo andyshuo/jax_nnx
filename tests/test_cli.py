@@ -131,7 +131,7 @@ def test_dry_run_builds_every_variant(kind, tmp_path, capsys):
     captured = capsys.readouterr()
     assert exit_code == 0
     assert 'dry-run' in captured.out
-    assert any(tmp_path.iterdir())
+    assert list(tmp_path.glob('*/config.json'))
 
 
 def _shrink(config):
@@ -153,3 +153,46 @@ def _shrink(config):
     config.agent_config.actor_config.out_features = 6
     config.agent_config.critic_config.in_features = 16
     return config
+
+
+def test_overrides_recompute_derived_sizes():
+    args = main.parse_args(
+        [
+            '--num-envs',
+            '4',
+            '--num-steps',
+            '16',
+            '--total-timesteps',
+            '1024',
+            '--learning-rate',
+            '0.001',
+        ]
+    )
+    config, _ = main.build_config('cleanrl')
+
+    main.apply_overrides(config, args)
+
+    tc = config.training_config
+    assert (tc.num_envs, tc.num_steps) == (4, 16)
+    assert tc.batch_size == 64
+    assert tc.minibatch_size == 8
+    assert tc.num_iterations == 16
+    assert tc.learning_rate == 0.001
+
+
+def test_write_config_dumps_json(tmp_path):
+    import json
+
+    config, strconfig = main.build_config('vae')
+
+    path = main.write_config(tmp_path, config, strconfig)
+    payload = json.loads(path.read_text())
+
+    assert payload['config']['training_config']['num_envs'] == 64
+    assert 'env_config' in payload['strconfig']
+
+
+def test_resume_flag_is_parsed():
+    args = main.parse_args(['--resume', '/tmp/some-run'])
+
+    assert args.resume == '/tmp/some-run'

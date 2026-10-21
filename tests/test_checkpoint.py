@@ -69,3 +69,29 @@ def test_checkpoint_manager_honours_max_to_keep(tmp_path, cleanrl_config, rngs_f
     manager.close()
 
     assert steps == [20]
+
+
+def test_restore_checkpoint_returns_none_when_empty(tmp_path):
+    import main
+
+    manager = make_manager(tmp_path / 'checkpoints')
+
+    assert main.restore_checkpoint(manager, {'global_step': 0}) is None
+    manager.close()
+
+
+def test_restore_checkpoint_roundtrip(tmp_path, cleanrl_config, rngs_factory):
+    import main
+
+    ckpt = build_checkpoint(cleanrl_config, rngs_factory(0))
+    manager = make_manager(tmp_path / 'checkpoints', max_to_keep=1)
+    manager.save(42, args=ocp.args.StandardSave(ckpt))
+    manager.wait_until_finished()
+
+    restored = main.restore_checkpoint(manager, ckpt)
+    manager.close()
+
+    assert restored is not None
+    assert int(restored['global_step']) == 42
+    for before, after in zip(jax.tree.leaves(ckpt['state']), jax.tree.leaves(restored['state']), strict=True):
+        assert np.allclose(np.asarray(before), np.asarray(after))
