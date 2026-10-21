@@ -52,6 +52,7 @@ from jax import NamedSharding
 from jax.sharding import PartitionSpec as P
 from PIL import Image
 
+from shared.evaluate import evaluate
 from shared.logger import make_logger
 from shared.make_envs import make_procgen
 
@@ -175,6 +176,20 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument('--num-steps', type=int, default=None, help='Override the rollout length.')
     parser.add_argument('--learning-rate', type=float, default=None, help='Override the learning rate.')
     parser.add_argument(
+        '--eval-interval',
+        type=int,
+        default=0,
+        metavar='N',
+        help='Evaluate the greedy policy every N iterations (0 disables evaluation).',
+    )
+    parser.add_argument(
+        '--eval-steps',
+        type=int,
+        default=4096,
+        metavar='S',
+        help='Number of environment steps per evaluation.',
+    )
+    parser.add_argument(
         '--resume',
         type=str,
         default=None,
@@ -277,6 +292,7 @@ def run(args: argparse.Namespace) -> dict:
     )
 
     envs = make_procgen(strconfig)
+    eval_envs = make_procgen(strconfig) if args.eval_interval > 0 else None
     episode = make_episode(
         obs_shape=envs.single_observation_space.shape,
         act_dim=envs.single_action_space.shape,
@@ -360,6 +376,21 @@ def run(args: argparse.Namespace) -> dict:
             f'loss={float(loss):.4f} sps={sps:,}'
         )
 
+        if eval_envs is not None and iteration % args.eval_interval == 0:
+            eval_metrics = evaluate(
+                eval_envs,
+                mesh,
+                graphdef,
+                state,
+                utils_module.get_greedy_action,
+                args.eval_steps,
+            )
+            logger.log(eval_metrics, step=global_step)
+            print(
+                f'eval @ step {global_step:,}: return={eval_metrics["Eval/return"]:.2f} '
+                f'over {int(eval_metrics["Eval/episodes"])} episodes'
+            )
+
         if global_step % (config.training_config.num_steps * config.training_config.num_envs * 100) == 0:
             ckpt = {
                 'state': state,
@@ -370,6 +401,8 @@ def run(args: argparse.Namespace) -> dict:
             checkpoint_manager.save(global_step, args=ocp.args.StandardSave(ckpt))
 
     envs.close()
+    if eval_envs is not None:
+        eval_envs.close()
     checkpoint_manager.wait_until_finished()
     checkpoint_manager.close()
     logger.finish()

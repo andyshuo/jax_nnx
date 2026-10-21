@@ -37,6 +37,12 @@ def get_value(graphdef, state, obs):
     return agent.get_value(obs)
 
 
+@jax.jit
+def get_greedy_action(graphdef, state, obs):
+    agent, _ = nnx.merge(graphdef, state)
+    return agent.act_greedy(obs)
+
+
 # --------------------------------------------------------------------------- #
 # Loss pieces (module level so they can be unit-tested individually)
 # --------------------------------------------------------------------------- #

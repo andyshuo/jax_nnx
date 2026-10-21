@@ -54,6 +54,11 @@ class PPOAgent(nnx.Module):
         _, hidden = self._encode_hidden(x)
         return self.critic(hidden)
 
+    def act_greedy(self, x):
+        """Deterministic action used for evaluation (argmax of the policy logits)."""
+        _, hidden = self._encode_hidden(x)
+        return jnp.argmax(self.actor(hidden), axis=-1).astype(jnp.int32)
+
     def get_action_and_value(self, x, rng, action=None):
         latent_logits, hidden = self._encode_hidden(x)
         z = self.vae.straight_through_sample(latent_logits, rng)

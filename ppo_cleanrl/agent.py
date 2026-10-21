@@ -33,6 +33,13 @@ class PPOAgent(nnx.Module):
         value = self.critic(x)
         return value
 
+    def act_greedy(self, x):
+        """Deterministic action used for evaluation (argmax of the policy logits)."""
+        x = x.astype(bf16) / bf16(255.0)
+        x = self.enc(x)
+        hidden = nnx.relu(self.proj(x))
+        return jnp.argmax(self.actor(hidden), axis=-1).astype(jnp.int32)
+
     def get_action_and_value(self, x, rng, action=None):
         x = x.astype(bf16) / bf16(255.0)
         x = self.enc(x)
