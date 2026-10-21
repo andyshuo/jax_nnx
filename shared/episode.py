@@ -3,8 +3,8 @@
 The two variants used to carry byte-identical copies of this module.
 """
 
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
 from chex import dataclass
 
 f32 = jnp.float32
