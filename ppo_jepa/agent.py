@@ -54,6 +54,7 @@ class PPOAgent(nnx.Module):
             PredictorConfig(
                 in_features=self.enc.output_dim,
                 out_features=self.enc.output_dim,
+                hidden_features=max(1, self.enc.output_dim // 4),
                 rngs=rngs,
                 dtype=bf16,
                 param_dtype=f32,

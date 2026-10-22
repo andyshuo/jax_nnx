@@ -24,6 +24,8 @@ class PredictorConfig:
 
     in_features: int = 0
     out_features: int = 0
+    #: Bottleneck width; 0 falls back to in_features.
+    hidden_features: int = 0
     rngs: nnx.Rngs | None = None
     dtype: jnp.dtype = bf16
     param_dtype: jnp.dtype = f32
@@ -37,8 +39,11 @@ class Predictor(nnx.Module):
     """
 
     def __init__(self, predictor_config):
-        self.fc0 = nnx.Linear(**predictor_config)
-        self.fc1 = nnx.Linear(**predictor_config)
+        cfg = dict(**predictor_config)
+        cfg.pop('hidden_features', None)
+        hidden = predictor_config.hidden_features or predictor_config.in_features
+        self.fc0 = nnx.Linear(**{**cfg, 'out_features': hidden})
+        self.fc1 = nnx.Linear(**{**cfg, 'in_features': hidden, 'out_features': predictor_config.out_features})
 
     def __call__(self, x):
         x = nnx.relu(self.fc0(x))

@@ -119,11 +119,12 @@ which encoder is better.
 | `nature` | 342,448 | 3.33 |
 | `impala` | 626,256 | 2.00 |
 | `vae` | 2,393,667 | 3.00 |
-| `jepa` | 9,018,960 | 0.00 |
+| `jepa` | 2,725,968 | n/a¹ |
 
-The `jepa` predictor is currently two `Linear(2048 -> 2048)` layers, so the auxiliary
-head (8.4M parameters) dominates its 0.6M encoder — worth shrinking before any real
-comparison. The full sweep takes tens of minutes on CPU.
+¹ The `jepa` sweep ran before its predictor was shrunk, so its return is not
+comparable. The predictor was two `Linear(2048 -> 2048)` layers (8.4M parameters, i.e.
+93% of the model); it now has a 512-wide bottleneck and the variant is 2.7M parameters
+in total. The full sweep takes tens of minutes on CPU.
 
 ## Tests
 
