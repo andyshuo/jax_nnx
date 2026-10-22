@@ -5,7 +5,17 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_DIRS = ['ppo_cleanrl', 'ppo_vae', 'shared']
+SOURCE_DIRS = [
+    'shared',
+    'scripts',
+    'ppo_cleanrl',
+    'ppo_vae',
+    'ppo_nature',
+    'ppo_impala',
+    'ppo_jepa',
+    'ppo_vit',
+    'ppo_tiny',
+]
 SOURCE_FILES = [ROOT / 'main.py'] + sorted(path for name in SOURCE_DIRS for path in (ROOT / name).rglob('*.py'))
 
 
