@@ -76,6 +76,14 @@ description = "Train the JEPA-auxiliary variant"
 cmd = "python scripts/benchmark.py"
 description = "Short comparison across every variant"
 
+[feature.base.tasks.train-vit]
+cmd = "python main.py --config vit --logdir runs"
+description = "Train the small ViT variant"
+
+[feature.base.tasks.train-tiny]
+cmd = "python main.py --config tiny --logdir runs"
+description = "Train the tiny-CNN baseline"
+
 [environments]
 default = { features = ["base", "cpu"], solve-group = "default" }
 gpu = { features = ["base", "gpu"], solve-group = "gpu" }

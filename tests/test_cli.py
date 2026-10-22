@@ -142,6 +142,15 @@ def _shrink(config):
         vae.dec_out_features = [8, 3]
         vae.num_categories = 4
         vae.categorical_dim = 8
+    elif hasattr(config.agent_config, 'vit_config'):
+        vit = config.agent_config.vit_config
+        vit.obs_shape = (16, 16, 3)
+        vit.hidden_dims = [16, 2, 2]
+        vit.patch_size = 8
+    elif hasattr(config.agent_config, 'tiny_config'):
+        tiny = config.agent_config.tiny_config
+        tiny.obs_shape = (16, 16, 3)
+        tiny.hidden_dims = [4, 8]
     elif hasattr(config.agent_config, 'nature_config'):
         nature = config.agent_config.nature_config
         nature.obs_shape = (16, 16, 3)
