@@ -134,16 +134,17 @@ pixi run test-fast   # skip the end-to-end update steps
 pixi run lint        # ruff check + format check
 ```
 
-CI (`.github/workflows/ci.yml`) provisions the pixi environment, runs lint plus the
-full suite on CPU, then dry-runs both variants to make sure the entry point builds.
-
-GitHub-hosted Actions are currently unavailable on this account (billing), so the same
-gate also runs locally, before the push instead of after it:
+There is **no GitHub Actions workflow**: the gate runs locally, on every commit,
+through a `pre-commit` hook.
 
 ```bash
 git config core.hooksPath .githooks   # one-time
 pixi run ci                           # lint + full suite + entrypoint smoke
 ```
+
+The hook runs exactly those three checks and aborts the commit when any of them
+fails, so a green history is guaranteed by the commit itself rather than by a CI
+service.
 
 ## License
 

@@ -100,14 +100,12 @@ def test_pip_requirements_are_not_duplicated():
     assert not stale, f'duplicated pip requirements: {stale}'
 
 
-def test_ci_workflow_exists_and_runs_tests():
-    workflow = ROOT / '.github' / 'workflows' / 'ci.yml'
-
-    assert workflow.is_file()
-    content = read(workflow)
-    assert 'setup-pixi' in content
-    assert 'pixi run test' in content
-    assert 'pixi run lint' in content
+def test_local_gate_replaces_github_actions():
+    """CI runs locally on every commit; there is deliberately no Actions workflow."""
+    hook = ROOT / '.githooks' / 'pre-commit'
+    assert hook.is_file()
+    assert 'pixi run ci' in read(hook)
+    assert not (ROOT / '.github' / 'workflows').exists()
 
 
 @pytest.mark.parametrize('pattern', ['.venv', 'wandb', 'logs', '__pycache__', '.pytest_cache'])
