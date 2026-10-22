@@ -104,9 +104,26 @@ pixi run python scripts/benchmark.py --variants cleanrl jepa --timesteps 500000
 
 Each variant is trained in its own process with `--no-wandb` and greedy evaluation
 enabled; the script parses the evaluation lines and writes `results.json` and a
-markdown `results.md` table next to the run directories. Timings depend heavily on
-the host, so the table is generated rather than committed: a full five-variant sweep
-takes tens of minutes on CPU.
+markdown `results.md` table next to the run directories.
+
+### Smoke sweep
+
+A 16,384-step sweep (`--timesteps 16384 --eval-steps 256`, i.e. **one** PPO update and
+one 256-step greedy evaluation) run on CPU. It exercises every variant end to end —
+that is all it is for; the returns are noise at this budget and say nothing about
+which encoder is better.
+
+| Variant | Params | Final eval return |
+| --- | --- | --- |
+| `cleanrl` | 626,256 | 1.43 |
+| `nature` | 342,448 | 3.33 |
+| `impala` | 626,256 | 2.00 |
+| `vae` | 2,393,667 | 3.00 |
+| `jepa` | 9,018,960 | 0.00 |
+
+The `jepa` predictor is currently two `Linear(2048 -> 2048)` layers, so the auxiliary
+head (8.4M parameters) dominates its 0.6M encoder — worth shrinking before any real
+comparison. The full sweep takes tens of minutes on CPU.
 
 ## Tests
 
