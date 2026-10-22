@@ -12,6 +12,8 @@ environment wrappers and PPO objective:
 | `nature`  | DQN "Nature" CNN                  | none (plain PPO)                | `--config nature`  |
 | `impala`  | deep IMPALA CNN (2 res blocks/stage) | none (plain PPO)             | `--config impala`  |
 | `jepa`    | ResNet + latent predictor         | JEPA-style latent prediction    | `--config jepa`    |
+| `vit`     | small Vision Transformer          | none (plain PPO)                | `--config vit`     |
+| `tiny`    | 3-stage CNN, 3,712 parameters     | none (plain PPO)                | `--config tiny`    |
 
 The `vae` variant encodes each frame into `num_categories × categorical_dim` discrete
 latents with a straight-through estimator, then feeds the flattened latent codes to a
@@ -120,6 +122,8 @@ which encoder is better.
 | `impala` | 626,256 | 2.00 |
 | `vae` | 2,393,667 | 3.00 |
 | `jepa` | 2,725,968 | n/a¹ |
+
+`vit` and `tiny` were added after this sweep and have not been benchmarked yet.
 
 ¹ The `jepa` sweep ran before its predictor was shrunk, so its return is not
 comparable. The predictor was two `Linear(2048 -> 2048)` layers (8.4M parameters, i.e.
