@@ -41,3 +41,4 @@ runs/
 .scratch
 .pixi/
 .pixi-cache/
+.gh-cache/
